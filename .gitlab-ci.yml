@@ -1,0 +1,67 @@
+stages:
+  - lint-and-test
+  - build-and-push
+  - deploy
+
+variables:
+  # Tag images with the commit SHA for absolute version control
+  IMAGE_TAG: $CI_COMMIT_SHORT_SHA
+  
+  # Backend and Frontend registry paths
+  BACKEND_IMAGE: $CI_REGISTRY_IMAGE/backend
+  FRONTEND_IMAGE: $CI_REGISTRY_IMAGE/frontend
+
+# --- Stage 1: Fast Feedback (Tests & Linting) ---
+backend-test:
+  stage: lint-and-test
+  image: maven:3.9.6-eclipse-temurin-21-alpine
+  script:
+    - cd backend
+    - mvn test
+  # This ensures the pipeline fails early if tests don't pass
+  allow_failure: false 
+
+# --- Stage 2: Containerize and Push to GitLab Registry ---
+.docker-build-template:
+  stage: build-and-push
+  image: docker:24.0.5-cli
+  services:
+    - docker:24.0.5-dind
+  before_script:
+    # Authenticate to the GitLab Container Registry using the ephemeral CI token
+    - echo "$CI_REGISTRY_PASSWORD" | docker login $CI_REGISTRY -u "$CI_REGISTRY_USER" --password-stdin
+
+build-backend-image:
+  extends: .docker-build-template
+  script:
+    - cd backend
+    - docker build -t $BACKEND_IMAGE:$IMAGE_TAG -t $BACKEND_IMAGE:latest .
+    - docker push $BACKEND_IMAGE:$IMAGE_TAG
+    - docker push $BACKEND_IMAGE:latest
+  needs:
+    - backend-test # Only build the image if tests passed
+
+build-frontend-image:
+  extends: .docker-build-template
+  script:
+    - cd frontend
+    - docker build -t $FRONTEND_IMAGE:$IMAGE_TAG -t $FRONTEND_IMAGE:latest .
+    - docker push $FRONTEND_IMAGE:$IMAGE_TAG
+    - docker push $FRONTEND_IMAGE:latest
+
+# --- Stage 3: Simulated Deployment ---
+deploy-to-production:
+  stage: deploy
+  image: alpine:latest
+  script:
+    - echo "Pulling images $BACKEND_IMAGE:$IMAGE_TAG and $FRONTEND_IMAGE:$IMAGE_TAG..."
+    - echo "Executing docker-compose up -d on production server..."
+    - echo "Deployment Successful! Application is live."
+  environment:
+    name: production
+  # Only deploy automatically if the code was merged to the main branch
+  only:
+    - main
+  needs:
+    - build-backend-image
+    - build-frontend-image
