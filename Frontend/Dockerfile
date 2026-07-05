@@ -3,7 +3,7 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 # Copy package manifests and install dependencies
 COPY package*.json ./
-RUN npm ci
+RUN npm install
 
 # Copy the rest of the source and build the static files
 COPY . .
