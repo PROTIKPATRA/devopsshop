@@ -16,7 +16,7 @@ backend-test:
   stage: lint-and-test
   image: maven:3.9.6-eclipse-temurin-21-alpine
   script:
-    - cd backend
+    - cd Backend
     - mvn test
   # This ensures the pipeline fails early if tests don't pass
   allow_failure: false 
@@ -34,7 +34,7 @@ backend-test:
 build-backend-image:
   extends: .docker-build-template
   script:
-    - cd backend
+    - cd Backend
     - docker build -t $BACKEND_IMAGE:$IMAGE_TAG -t $BACKEND_IMAGE:latest .
     - docker push $BACKEND_IMAGE:$IMAGE_TAG
     - docker push $BACKEND_IMAGE:latest
@@ -44,7 +44,7 @@ build-backend-image:
 build-frontend-image:
   extends: .docker-build-template
   script:
-    - cd frontend
+    - cd Frontend
     - docker build -t $FRONTEND_IMAGE:$IMAGE_TAG -t $FRONTEND_IMAGE:latest .
     - docker push $FRONTEND_IMAGE:$IMAGE_TAG
     - docker push $FRONTEND_IMAGE:latest

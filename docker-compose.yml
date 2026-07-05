@@ -20,7 +20,7 @@ services:
 
   backend:
     build:
-      context: ./backend
+      context: ./Backend
       dockerfile: Dockerfile
     container_name: devopsshop-backend
     environment:
@@ -42,7 +42,7 @@ services:
 
   frontend:
     build:
-      context: ./frontend
+      context: ./Frontend
       dockerfile: Dockerfile
     container_name: devopsshop-frontend
     ports:
