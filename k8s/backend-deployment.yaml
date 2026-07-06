@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: backend-deployment
 spec:
-  replicas: 2 # We are spinning up two instances of the API for high availability!
+  replicas: 2
   selector:
     matchLabels:
       app: backend
@@ -12,19 +12,24 @@ spec:
       labels:
         app: backend
     spec:
+      imagePullSecrets:
+        - name: gitlab-secret
       containers:
         - name: backend
-          image: registry.gitlab.com/protikpatra1-group/devopsshop/backend:latest 
+          image: registry.gitlab.com/protikpatra1-group/devopsshop/backend:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
           env:
-            - name: DB_HOST
-              value: "postgres" # This exactly matches the name of our Postgres Service
-            - name: DB_PORT
-              value: "5432"
-            - name: DB_NAME
-              value: "devopsshop"
-          envFrom:
-            - secretRef:
-                name: postgres-secret
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:postgresql://postgres:5432/devopsshop"
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_USER
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_PASSWORD

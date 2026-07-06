@@ -52,11 +52,22 @@ build-frontend-image:
 # --- Stage 3: Simulated Deployment ---
 deploy-to-production:
   stage: deploy
-  image: alpine:latest
+  image: bitnami/kubectl:latest
   script:
-    - echo "Pulling images $BACKEND_IMAGE:$IMAGE_TAG and $FRONTEND_IMAGE:$IMAGE_TAG..."
-    - echo "Executing docker-compose up -d on production server..."
-    - echo "Deployment Successful! Application is live."
+    # Set up the connection to your AKS cluster
+    - kubectl config set-cluster aks --server="$KUBE_URL" --insecure-skip-tls-verify=true
+    - kubectl config set-credentials admin --token="$KUBE_TOKEN"
+    - kubectl config set-context default --cluster=aks --user=admin
+    - kubectl config use-context default
+    
+    # Update the deployment images to use the new SHA-tagged versions
+    # This triggers a rolling update in your cluster
+    - kubectl set image deployment/backend-deployment backend=$BACKEND_IMAGE:$IMAGE_TAG -n default
+    - kubectl set image deployment/frontend-deployment frontend=$FRONTEND_IMAGE:$IMAGE_TAG -n default
+    
+    # Verify the rollouts
+    - kubectl rollout status deployment/backend-deployment -n default
+    - kubectl rollout status deployment/frontend-deployment -n default
   environment:
     name: production
   # Only deploy automatically if the code was merged to the main branch
