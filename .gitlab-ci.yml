@@ -52,25 +52,24 @@ build-frontend-image:
 # --- Stage 3: Simulated Deployment ---
 deploy-to-production:
   stage: deploy
-  image: bitnami/kubectl:latest
+  image:
+    name: bitnami/kubectl:latest
+    entrypoint: [""]  # <--- THIS IS THE FIX
   script:
-    # Set up the connection to your AKS cluster
     - kubectl config set-cluster aks --server="$KUBE_URL" --insecure-skip-tls-verify=true
     - kubectl config set-credentials admin --token="$KUBE_TOKEN"
     - kubectl config set-context default --cluster=aks --user=admin
     - kubectl config use-context default
     
-    # Update the deployment images to use the new SHA-tagged versions
-    # This triggers a rolling update in your cluster
+    # Update the images
     - kubectl set image deployment/backend-deployment backend=$BACKEND_IMAGE:$IMAGE_TAG -n default
     - kubectl set image deployment/frontend-deployment frontend=$FRONTEND_IMAGE:$IMAGE_TAG -n default
     
-    # Verify the rollouts
+    # Verify rollouts
     - kubectl rollout status deployment/backend-deployment -n default
     - kubectl rollout status deployment/frontend-deployment -n default
   environment:
     name: production
-  # Only deploy automatically if the code was merged to the main branch
   only:
     - main
   needs:

@@ -21,7 +21,11 @@ management:
   endpoints:
     web:
       exposure:
-        include: health, info, metrics
+        # Add 'prometheus' here so it shows up at /actuator/prometheus
+        include: health, info, metrics, prometheus
   endpoint:
     health:
       show-details: always
+    # Explicitly enable the prometheus endpoint
+    prometheus:
+      enabled: true

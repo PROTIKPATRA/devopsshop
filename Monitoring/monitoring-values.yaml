@@ -1,0 +1,13 @@
+grafana:
+  persistence:
+    enabled: true
+    size: 10Gi
+prometheus:
+  prometheusSpec:
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 10Gi
